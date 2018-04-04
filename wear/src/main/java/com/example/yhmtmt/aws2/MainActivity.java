@@ -184,7 +184,8 @@ class AWSCom
         int rcvCount = -1;
         try {
             int readTries = 0;
-            while (reader.available() < cmdLen && maxReadTries > readTries) {
+            int navailable = 0;
+            while ((navailable = reader.available()) < cmdLen && maxReadTries > readTries) {
                 sleep(readTryInterval);
                 readTries++;
             }
@@ -277,7 +278,7 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
                     }
 
                     if (vStrs[0] != null) {
-                        if(!awsCom.cmdFset(strUIFilter, strSetParams, vStrs)){
+                        if(awsCom.cmdFset(strUIFilter, strSetParams, vStrs)){
                             engState = nextEngState;
                             rudState = nextRudState;
                         }else
