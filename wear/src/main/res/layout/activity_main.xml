@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     android:background="@color/dark_grey"
     android:padding="@dimen/box_inset_layout_padding"
+    android:keepScreenOn="true"
     tools:context=".MainActivity"
     tools:deviceIds="wear">
 
