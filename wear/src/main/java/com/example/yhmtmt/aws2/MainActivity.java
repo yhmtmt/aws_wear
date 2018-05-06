@@ -37,6 +37,9 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
     String addr = "192.168.11.12";
     int port = 20000;
 
+    boolean bInitStateParam = false;
+    int[] stateParam = new int[17];
+    String[] strStateParam = {"stp", "dsah", "slah","hfah", "flah", "nf", "dsas", "slas", "hfas", "flas", "mds", "p10", "p20", "hap", "s10", "s20", "has"};
     String strUIFilter="aws1_ui";
     String[] strGetParams = {"wmeng", "wrud", "wrev", "wsog", "wcog", "wyaw", "wdpt", "wear"};
     String[] strSetParams = {"crz"};
@@ -63,9 +66,21 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
                 addr = AppData.getInstance().addr;
                 port = AppData.getInstance().port;
                 if(awsCom.startSession(addr, port)) {
-                    String[] vStrs = new String[1];
+                    String[] vStrs = new String[17];
                     vStrs[0] = null;
+                    if(!bInitStateParam){
+                        if(awsCom.cmdFget(strUIFilter, strStateParam, vStrs)){
+                            for(int iparam = 0; iparam < vStrs.length; iparam++){
+                                stateParam[iparam] = Integer.parseInt(vStrs[iparam]);
+                            }
+                            bInitStateParam = true;
+                            return;
+                        }else{
+                            throw new IOException();
+                        }
+                    }
 
+                    vStrs = new String[1];
                     // setting order if needed
                     if (nextEngState != engState) {
                         vStrs[0] = nextEngState.name();
@@ -74,10 +89,7 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
                     }
 
                     if (vStrs[0] != null) {
-                        if(awsCom.cmdFset(strUIFilter, strSetParams, vStrs)){
-                            engState = nextEngState;
-                            rudState = nextRudState;
-                        }else
+                        if(!awsCom.cmdFset(strUIFilter, strSetParams, vStrs))
                             throw new IOException();
                     }
 
@@ -101,6 +113,8 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
                         }catch(NumberFormatException e){
                             e.printStackTrace();
                         }
+                        engState = getEngState(eng);
+                        rudState = getRudState(rud);
                     }else{
                         throw new IOException();
                     }
@@ -125,6 +139,10 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
                     strInfo2 = String.format("%02d.%1dkts %04drpm", sog/10, sog%10, rev);
                     txtInfo1.setText(strInfo1);
                     txtInfo2.setText(strInfo2);
+                    btnForward.setText(getEngStateIconString(getNextFEngState()));
+                    btnBackward.setText(getEngStateIconString(getNextBEngState()));
+                    btnPort.setText(getRudStateIconString(getNextPRudState()));
+                    btnStarboard.setText(getRudStateIconString(getNextSRudState()));
                 }
             });
         }
@@ -150,6 +168,60 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
     RudState rudState, nextRudState;
     int eng, rud, rev, sog, cog, yaw, dpt;
     boolean bctrl = false;
+
+    protected EngState getEngState(int eng){
+        if(eng > stateParam[0]) {
+            if (eng < stateParam[1]) {
+                return EngState.stp;
+            }else if(eng < stateParam[2]){
+                return EngState.dsah;
+            }else if(eng < stateParam[3]){
+                return EngState.slah;
+            }else if(eng < stateParam[4]){
+                return EngState.hfah;
+            }else if(eng < stateParam[5]){
+                return EngState.flah;
+            }else{
+                return EngState.nf;
+            }
+        }else{
+            if(eng > stateParam[6]){
+                return EngState.stp;
+            }else if(eng > stateParam[7]){
+                return EngState.dsas;
+            }else if(eng > stateParam[8]){
+                return EngState.slas;
+            }else if(eng > stateParam[9]){
+                return EngState.hfas;
+            }else{
+                return EngState.flas;
+            }
+        }
+    };
+
+    protected RudState getRudState(int rud){
+        if(rud < stateParam[10]){
+            if(rud > stateParam[11]){
+                return RudState.mds;
+            }else if(rud > stateParam[12]){
+                return RudState.p10;
+            }else if(rud > stateParam[13]){
+                return RudState.p20;
+            }else{
+                return RudState.hap;
+            }
+        }else{
+            if(rud < stateParam[14]){
+                return RudState.mds;
+            }else if(rud < stateParam[15]){
+                return RudState.s10;
+            }else if(rud < stateParam[16]){
+                return RudState.s20;
+            }else{
+                return RudState.has;
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -249,143 +321,181 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
         }
     }
 
+    protected EngState getNextFEngState()
+    {
+        switch(engState){
+            case stp:
+                return engState.dsah;
+            case dsah:
+                return engState.slah;
+            case slah:
+                return engState.hfah;
+            case hfah:
+                return engState.flah;
+            case flah:
+                return engState.nf;
+            case nf:
+                return engState.nf;
+            case dsas:
+                return  engState.stp;
+            case slas:
+                return engState.dsas;
+            case hfas:
+                return engState.slas;
+            case flas:
+                return engState.hfas;
+            default:
+                return engState.stp;
+        }
+    }
+
+    protected EngState getNextBEngState()
+    {
+        switch(engState){
+            case stp:
+                return engState.dsas;
+            case dsas:
+                return engState.slas;
+            case slas:
+                return engState.hfas;
+            case hfas:
+                return engState.flas;
+            case flas:
+                return engState.flas;
+            case nf:
+                return engState.flah;
+            case dsah:
+                return engState.stp;
+            case slah:
+                return engState.dsah;
+            case hfah:
+                return engState.slah;
+            case flah:
+                return engState.hfah;
+            default:
+                return engState.stp;
+        }
+    }
+
+    protected String getEngStateIconString(EngState es)
+    {
+        switch(es){
+            case stp:
+                return "N";
+            case dsas:
+                return "B0";
+            case slas:
+                return "B1";
+            case hfas:
+                return "B2";
+            case flas:
+                return "B3";
+            case nf:
+                return "F4";
+            case dsah:
+                return "F0";
+            case slah:
+                return "F1";
+            case hfah:
+                return "F2";
+            case flah:
+                return "F3";
+            default:
+                return "-";
+        }
+    }
+
+
     public void setNextEngState(int id)
     {
         if(R.id.forward == id) {
-            switch(engState){
-                case stp:
-                    nextEngState = engState.dsah;
-                    break;
-                case dsah:
-                    nextEngState = engState.slah;
-                    break;
-                case slah:
-                    nextEngState = engState.hfah;
-                    break;
-                case hfah:
-                    nextEngState = engState.flah;
-                    break;
-                case flah:
-                    nextEngState = engState.nf;
-                    break;
-                case nf:
-                    nextEngState = engState.nf;
-                    break;
-                case dsas:
-                    nextEngState = engState.stp;
-                    break;
-                case slas:
-                    nextEngState = engState.dsas;
-                    break;
-                case hfas:
-                    nextEngState = engState.slas;
-                    break;
-                case flas:
-                    nextEngState = engState.hfas;
-                    break;
-                default:
-                    nextEngState = engState.stp;
-            }
+            nextEngState = getNextFEngState();
             return;
         }
 
         if(R.id.backward == id) {
-            switch(engState){
-                case stp:
-                    nextEngState = engState.dsas;
-                    break;
-                case dsas:
-                    nextEngState = engState.slas;
-                    break;
-                case slas:
-                    nextEngState = engState.hfas;
-                    break;
-                case hfas:
-                    nextEngState = engState.flas;
-                    break;
-                case flas:
-                    nextEngState = engState.flas;
-                    break;
-                case nf:
-                    nextEngState = engState.flah;
-                    break;
-                case dsah:
-                    nextEngState = engState.stp;
-                    break;
-                case slah:
-                    nextEngState = engState.dsah;
-                    break;
-                case hfah:
-                    nextEngState = engState.slah;
-                    break;
-                case flah:
-                    nextEngState = engState.hfah;
-                    break;
-                default:
-                    nextEngState = engState.stp;
-            }
+            nextEngState = getNextBEngState();
             return;
         }
 
         nextEngState = engState.stp;
     }
 
+    protected RudState getNextSRudState()
+    {
+        switch(rudState){
+            case mds:
+                return RudState.s10;
+            case p10:
+                return RudState.mds;
+            case p20:
+                return RudState.p10;
+            case hap:
+                return RudState.p20;
+            case s10:
+                return RudState.s20;
+            case s20:
+                return RudState.has;
+            case has:
+                return RudState.has;
+            default:
+                return RudState.mds;
+        }
+    }
+
+    protected RudState getNextPRudState()
+    {
+        switch(rudState){
+            case mds:
+                return RudState.p10;
+            case p10:
+                return RudState.p20;
+            case p20:
+            case hap:
+                return RudState.hap;
+            case s10:
+                return RudState.mds;
+            case s20:
+                return RudState.s10;
+            case has:
+                return RudState.s20;
+            default:
+                return RudState.mds;
+        }
+    }
+
+    protected String getRudStateIconString(RudState rs)
+    {
+        switch(rs){
+            case mds:
+                return "M";
+            case p10:
+                return "P0";
+            case p20:
+                return "P1";
+            case hap:
+                return "P2";
+            case s10:
+                return "S0";
+            case s20:
+                return "S1";
+            case has:
+                return "S2";
+            default:
+                return "-";
+        }
+    }
+
     public void setNextRudState(int id)
     {
 
         if(R.id.port == id){
-            switch(rudState){
-                case mds:
-                    nextRudState = RudState.p10;
-                    break;
-                case p10:
-                    nextRudState = RudState.p20;
-                    break;
-                case p20:
-                case hap:
-                    nextRudState = RudState.hap;
-                    break;
-                case s10:
-                    nextRudState = RudState.mds;
-                    break;
-                case s20:
-                    nextRudState = RudState.s10;
-                    break;
-                case has:
-                    nextRudState = RudState.s20;
-                    break;
-                default:
-                    nextRudState = RudState.mds;
-            }
+            nextRudState = getNextPRudState();
             return;
         }
 
         if(R.id.starboard == id){
-            switch(rudState){
-                case mds:
-                    nextRudState = RudState.s10;
-                    break;
-                case p10:
-                    nextRudState = RudState.mds;
-                    break;
-                case p20:
-                    nextRudState = RudState.p10;
-                    break;
-                case hap:
-                    nextRudState = RudState.p20;
-                    break;
-                case s10:
-                    nextRudState = RudState.s20;
-                    break;
-                case s20:
-                    nextRudState = RudState.has;
-                    break;
-                case has:
-                    nextRudState = RudState.has;
-                    break;
-                default:
-                    nextRudState = RudState.mds;
-            }
+            nextRudState = getNextSRudState();
             return;
         }
 
