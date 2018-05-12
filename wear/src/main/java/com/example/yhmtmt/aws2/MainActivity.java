@@ -82,10 +82,19 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
 
                     vStrs = new String[1];
                     // setting order if needed
-                    if (nextEngState != engState) {
-                        vStrs[0] = nextEngState.name();
-                    } else if (nextRudState != rudState) {
-                        vStrs[0] = nextRudState.name();
+                    if(bSetEngState) {
+                        if (nextEngState != engState) {
+                            vStrs[0] = nextEngState.name();
+                        }else{
+                            bSetEngState = false;
+                        }
+                    }
+                    if(bSetRudState) {
+                        if (nextRudState != rudState) {
+                            vStrs[0] = nextRudState.name();
+                        }else{
+                            bSetEngState = false;
+                        }
                     }
 
                     if (vStrs[0] != null) {
@@ -405,9 +414,12 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
         }
     }
 
+    boolean bSetEngState = false;
+    boolean bSetRudState = false;
 
     public void setNextEngState(int id)
     {
+        bSetEngState = true;
         if(R.id.forward == id) {
             nextEngState = getNextFEngState();
             return;
@@ -488,7 +500,7 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
 
     public void setNextRudState(int id)
     {
-
+        bSetRudState=true;
         if(R.id.port == id){
             nextRudState = getNextPRudState();
             return;
