@@ -93,7 +93,7 @@ public class MainActivity extends WearableActivity implements View.OnClickListen
                         if (nextRudState != rudState) {
                             vStrs[0] = nextRudState.name();
                         }else{
-                            bSetEngState = false;
+                            bSetRudState = false;
                         }
                     }
 
